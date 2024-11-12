@@ -92,7 +92,7 @@ def build_dataset_ssl(args):
     print_transform(transform_train, "train")
     print_transform(transform_val, "val")
 
-    train_dataset_x = ImageFolderWithIndex(traindir, trainindex_x, transform=transform_train)
+    train_dataset_x = ImageFolderWithIndex('./working_data/train', trainindex_x, transform=transform_train)
     train_dataset_u = ImageFolderWithIndex(traindir, trainindex_u, transform=transform_u)
     val_dataset = ImageFolder(valdir, transform=transform_val)
 

@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
 from timm.models.layers import DropPath
-
+import os
 import util.misc as misc
 import util.lr_sched as lr_sched
 
@@ -194,7 +194,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 
 @torch.no_grad()
-def evaluate(data_loader, model, device):
+def evaluate(data_loader, model, device, dataset_val, filename):
+    samples = dataset_val.imgs
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = misc.MetricLogger(delimiter="  ")
@@ -202,18 +203,27 @@ def evaluate(data_loader, model, device):
 
     # switch to evaluation mode
     model.eval()
-
-    for batch in metric_logger.log_every(data_loader, 100, header):
+    writer = open(filename, 'w')
+    writer.write("image,id\n")
+    idx_to_class = {value: key for key, value in dataset_val.class_to_idx.items()}
+    for idx, batch in enumerate(metric_logger.log_every(data_loader, 10, header)):
         images = batch[0]
         target = batch[-1]
+        if target.shape[0]==10:
+            filenames = samples[10*idx:10*(idx+1)]
+        else:
+            filenames = samples[10*idx:]
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
-
         # compute output
         with torch.cuda.amp.autocast():
             output = model(images)
             loss = criterion(output, target)
 
+        max_class = output.argmax(1).cpu().tolist()
+        for class_id, filepath in zip(max_class, filenames):
+            filename = os.path.split(filepath[0])[1]
+            writer.write("{},{}\n".format(filename, idx_to_class[class_id]))
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
         batch_size = images.shape[0]

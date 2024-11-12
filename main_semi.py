@@ -221,7 +221,6 @@ def main(args):
     np.random.seed(seed)
 
     cudnn.benchmark = True
-
     dataset_train_x, dataset_train_u, dataset_val = build_dataset_ssl(args=args)
 
     if True:  # args.distributed:
@@ -271,11 +270,12 @@ def main(args):
     )
 
     data_loader_val = torch.utils.data.DataLoader(
-        dataset_val, sampler=sampler_val,
+        dataset_val,
         batch_size=int(args.mu * args.batch_size),
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
-        drop_last=False
+        drop_last=False,
+        shuffle=False
     )
 
     mixup_fn, pseudo_mixup_fn = None, None
@@ -412,10 +412,10 @@ def main(args):
         optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
 
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device)
+        test_stats = evaluate(data_loader_val, model, device, dataset_val, "sub1.csv")
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         if model_ema is not None:
-            test_stats_ema = evaluate(data_loader_val, model_ema.ema, device)
+            test_stats_ema = evaluate(data_loader_val, model_ema.ema, device, dataset_val, "sub2.csv")
             print(f"Accuracy of the EMA network on the {len(dataset_val)} test images: {test_stats_ema['acc1']:.1f}%")
         exit(0)
 
