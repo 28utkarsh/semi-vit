@@ -22,6 +22,7 @@ from timm.models.layers import trunc_normal_
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.utils import ModelEma
+import timm
 
 import util.lr_decay as lrd
 import util.misc as misc
@@ -236,13 +237,14 @@ def main(args):
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
     
-    model = models_vit.__dict__[args.model](
-        num_classes=args.nb_classes,
-        drop_path_rate=args.drop_path,
-        global_pool=args.global_pool,
-        use_fixed_pos_emb=args.use_fixed_pos_emb,
-        init_scale=args.init_scale,
-    )
+    #model = models_vit.__dict__[args.model](
+    #    num_classes=args.nb_classes,
+    #    drop_path_rate=args.drop_path,
+    #    global_pool=args.global_pool,
+    #    use_fixed_pos_emb=args.use_fixed_pos_emb,
+    #    init_scale=args.init_scale,
+    #)
+    model = timm.create_model('swin_large_patch4_window7_224', num_classes=args.nb_classes, pretrained=True)
 
     if args.finetune and not args.eval:
         checkpoint = torch.load(args.finetune, map_location='cpu')

@@ -209,10 +209,10 @@ def evaluate(data_loader, model, device, dataset_val, filename):
     for idx, batch in enumerate(metric_logger.log_every(data_loader, 10, header)):
         images = batch[0]
         target = batch[-1]
-        if target.shape[0]==10:
-            filenames = samples[10*idx:10*(idx+1)]
+        if target.shape[0]==50:
+            filenames = samples[50*idx:50*(idx+1)]
         else:
-            filenames = samples[10*idx:]
+            filenames = samples[50*idx:]
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
         # compute output

@@ -15,7 +15,7 @@ def param_groups_lrd(model, weight_decay=0.05, no_weight_decay_list=[], layer_de
     param_group_names = {}
     param_groups = {}
 
-    num_layers = len(model.blocks) + 1
+    num_layers = model.num_layers
 
     layer_scales = list(layer_decay ** (num_layers - i) for i in range(num_layers + 1))
     layer_scales[-1] = head_scalar * layer_scales[-1]

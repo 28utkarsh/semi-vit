@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import numpy as np
+np.bool = np.bool_
 import torch
 from timm.data.mixup import Mixup
 from timm.data.mixup import cutmix_bbox_and_lam, mixup_target, one_hot
@@ -15,8 +16,8 @@ from timm.data.mixup import cutmix_bbox_and_lam, mixup_target, one_hot
 def explicit_mixup_target(target1, target2, num_classes, lam=1., smoothing=0.0, device='cuda'):
     off_value = smoothing / num_classes
     on_value = 1. - smoothing + off_value
-    y1 = one_hot(target1, num_classes, on_value=on_value, off_value=off_value, device=device)
-    y2 = one_hot(target2, num_classes, on_value=on_value, off_value=off_value, device=device)
+    y1 = one_hot(target1, num_classes, on_value=on_value, off_value=off_value)
+    y2 = one_hot(target2, num_classes, on_value=on_value, off_value=off_value)
     return y1 * lam + y2 * (1. - lam)
 
 

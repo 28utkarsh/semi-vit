@@ -21,6 +21,8 @@ from torch.utils.tensorboard import SummaryWriter
 from timm.models.layers import trunc_normal_
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.utils import ModelEma
+import timm
+import torch.nn as nn
 
 import util.lr_decay as lrd
 import util.misc as misc
@@ -296,15 +298,17 @@ def main(args):
                 label_smoothing=args.smoothing, num_classes=args.nb_classes)
             print("pseudo_mixup_fn: {}".format(pseudo_mixup_fn))
     
-    model = models_vit.__dict__[args.model](
-        num_classes=args.nb_classes,
-        drop_rate=args.drop,
-        drop_path_rate=args.drop_path,
-        attn_drop_rate=args.attn_drop_rate,
-        global_pool=args.global_pool,
-        use_fixed_pos_emb=args.use_fixed_pos_emb,
-        init_scale=args.init_scale,
-    )
+    #model = models_vit.__dict__[args.model](
+    #    num_classes=args.nb_classes,
+    #    drop_rate=args.drop,
+    #    drop_path_rate=args.drop_path,
+    #    attn_drop_rate=args.attn_drop_rate,
+    #    global_pool=args.global_pool,
+    #    use_fixed_pos_emb=args.use_fixed_pos_emb,
+    #    init_scale=args.init_scale,
+    #)
+
+    model = timm.create_model('swin_large_patch4_window7_224', num_classes=args.nb_classes, pretrained=True)
 
     if args.finetune and not args.eval:
         checkpoint = torch.load(args.finetune, map_location='cpu')
@@ -380,7 +384,7 @@ def main(args):
     print("number of unlabeled training examples = %d" % len(dataset_train_u))
 
     if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], broadcast_buffers=False)
         model_without_ddp = model.module
 
     # build optimizer with layer-wise lr decay (lrd)
@@ -438,7 +442,7 @@ def main(args):
                 loss_scaler=loss_scaler, epoch=epoch, save_names=save_names, model_ema=model_ema)
 
         if (epoch + 1) % args.eval_freq == 0:
-            test_stats = evaluate(data_loader_val, model, device)
+            test_stats = evaluate(data_loader_val, model, device, dataset_val, "ignore.csv")
             print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
             if max_accuracy < test_stats["acc1"]:
                 max_accuracy = test_stats["acc1"]
@@ -450,7 +454,7 @@ def main(args):
             print(f'Max accuracy: {max_accuracy:.2f}%')
 
             if model_ema is not None:
-                test_stats_ema = evaluate(data_loader_val, model_ema.ema, device)
+                test_stats_ema = evaluate(data_loader_val, model_ema.ema, device, dataset_val, "sub1.csv")
                 print(f"Accuracy of the EMA network on the {len(dataset_val)} test images: {test_stats_ema['acc1']:.1f}%")
 
             if log_writer is not None:
